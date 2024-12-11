@@ -126,6 +126,24 @@ function StockCharts() {
     }
   });
 
+  // Calculate min and max values for the normalized chart
+  const yDomain = normalizedChartData.reduce(
+    (acc, point) => {
+      Object.entries(point).forEach(([key, value]) => {
+        if (key !== "date" && typeof value === "number") {
+          acc.min = Math.min(acc.min, value);
+          acc.max = Math.max(acc.max, value);
+        }
+      });
+      return acc;
+    },
+    { min: Infinity, max: -Infinity },
+  );
+
+  // Round the domain values to nearest integers
+  const yMin = Math.floor(yDomain.min);
+  const yMax = Math.ceil(yDomain.max);
+
   return (
     <div className="charts-container">
       <h2>ETF Performance</h2>
@@ -147,7 +165,7 @@ function StockCharts() {
           <LineChart data={normalizedChartData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
-            <YAxis domain={[60, 140]} />
+            <YAxis domain={[yMin, yMax]} />
             <Tooltip
               formatter={(value: number, name: string) => [
                 value.toFixed(2),
