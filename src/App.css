@@ -19,6 +19,7 @@
 
 .chart-wrapper {
   margin-bottom: 2rem;
+  transition: all 0.3s ease-in-out;
 }
 
 .chart-wrapper h3 {
@@ -177,4 +178,24 @@ h2 {
   .portfolio-content {
     grid-template-columns: 1fr;
   }
+}
+
+.absolute-performance {
+  margin: 1rem 0;
+}
+
+.toggle-button {
+  background: transparent;
+  border: 1px solid #646cff;
+  color: #646cff;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.toggle-button:hover {
+  background: #646cff;
+  color: white;
 }

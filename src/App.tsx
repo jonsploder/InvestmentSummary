@@ -78,6 +78,7 @@ function normalizeData(data: ChartData[]): ChartData[] {
 function StockCharts() {
   const [timeRange, setTimeRange] = useState("2y");
   const [activeItem, setActiveItem] = useState("");
+  const [showAbsolute, setShowAbsolute] = useState(false);
 
   const queries = useQueries({
     queries: ETF_LIST.map((symbol) => ({
@@ -179,26 +180,37 @@ function StockCharts() {
         </ResponsiveContainer>
       </div>
 
-      <div className="chart-wrapper">
-        <h3>Absolute Performance</h3>
-        <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            {ETF_LIST.map((symbol, index) => (
-              <Line
-                key={symbol}
-                type="monotone"
-                dataKey={symbol.replace(".AX", "")}
-                stroke={COLORS[index]}
-                dot={false}
-              />
-            ))}
-          </LineChart>
-        </ResponsiveContainer>
+      <div className="absolute-performance">
+        <button
+          className="toggle-button"
+          onClick={() => setShowAbsolute(!showAbsolute)}
+        >
+          {showAbsolute ? "Hide" : "Show"} Absolute Performance
+        </button>
+
+        {showAbsolute && (
+          <div className="chart-wrapper">
+            <h3>Absolute Performance</h3>
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                {ETF_LIST.map((symbol, index) => (
+                  <Line
+                    key={symbol}
+                    type="monotone"
+                    dataKey={symbol.replace(".AX", "")}
+                    stroke={COLORS[index]}
+                    dot={false}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
 
       <PortfolioManager currentPrices={currentPrices} etfList={ETF_LIST} />
