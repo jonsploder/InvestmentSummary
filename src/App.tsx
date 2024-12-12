@@ -48,8 +48,20 @@ interface ChartData {
   [key: string]: number | string;
 }
 
-function normalizeData(data: ChartData[]): ChartData[] {
+interface Portfolio {
+  holdings: Holding[];
+}
+
+interface Holding {
+  symbol: string;
+  shares: number;
+}
+
+function normalizeData(data: ChartData[], portfolio: Portfolio): ChartData[] {
   const baseValues: { [key: string]: number } = {};
+  const totalInvestment = portfolio.holdings
+    .filter((h) => h.symbol !== "CASH")
+    .reduce((sum, h) => sum + h.shares, 0);
 
   // Get the first valid value for each symbol
   Object.keys(data[0]).forEach((key) => {
@@ -66,11 +78,28 @@ function normalizeData(data: ChartData[]): ChartData[] {
   // Create normalized data points
   return data.map((point) => {
     const normalizedPoint: ChartData = { date: point.date };
+
+    // Calculate individual normalized values
     Object.keys(point).forEach((key) => {
       if (key !== "date" && point[key] !== null && point[key] !== undefined) {
         normalizedPoint[key] = (Number(point[key]) / baseValues[key]) * 100;
       }
     });
+
+    // Calculate weighted total
+    const weightedTotal = portfolio.holdings
+      .filter((h) => h.symbol !== "CASH")
+      .reduce((sum, holding) => {
+        const symbol = holding.symbol;
+        if (normalizedPoint[symbol] !== undefined) {
+          const weight = holding.shares / totalInvestment;
+          return sum + (normalizedPoint[symbol] as number) * weight;
+        }
+        return sum;
+      }, 0);
+
+    normalizedPoint.TOTAL = weightedTotal;
+
     return normalizedPoint;
   });
 }
@@ -79,6 +108,22 @@ function StockCharts() {
   const [timeRange, setTimeRange] = useState("2y");
   const [activeItem, setActiveItem] = useState("");
   const [showAbsolute, setShowAbsolute] = useState(false);
+  const [showTotal, setShowTotal] = useState(true);
+  const [portfolio, setPortfolio] = useState<Portfolio>(() => {
+    const saved = localStorage.getItem("portfolio");
+    return saved
+      ? JSON.parse(saved)
+      : {
+          holdings: [
+            ...ETF_LIST.map((symbol) => ({
+              symbol: symbol.replace(".AX", ""),
+              shares: 0,
+            })),
+            { symbol: "CASH", shares: 0 },
+          ],
+          lastUpdated: new Date().toISOString(),
+        };
+  });
 
   const queries = useQueries({
     queries: ETF_LIST.map((symbol) => ({
@@ -115,7 +160,7 @@ function StockCharts() {
     return dataPoint;
   });
 
-  const normalizedChartData = normalizeData(chartData || []);
+  const normalizedChartData = normalizeData(chartData || [], portfolio);
 
   // Get current prices for portfolio calculations
   const currentPrices: { [key: string]: number } = {};
@@ -148,7 +193,7 @@ function StockCharts() {
     <div className="charts-container">
       <h2>ETF Performance</h2>
       <div className="time-range-selector">
-        {["1m", "6m", "1y", "2y", "5y"].map((range) => (
+        {["1m", "6m", "1y", "2y", "5y", "10y"].map((range) => (
           <button
             key={range}
             onClick={() => setTimeRange(range)}
@@ -160,7 +205,17 @@ function StockCharts() {
       </div>
 
       <div className="chart-wrapper">
-        <h3>Relative Performance (Base: 100)</h3>
+        <div className="chart-header">
+          <h3>Relative Performance (Base: 100)</h3>
+          <label className="total-line-toggle">
+            <input
+              type="checkbox"
+              checked={showTotal}
+              onChange={(e) => setShowTotal(e.target.checked)}
+            />
+            Show Portfolio Total
+          </label>
+        </div>
         <ResponsiveContainer width="100%" height={400}>
           <LineChart data={normalizedChartData}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -194,6 +249,16 @@ function StockCharts() {
                 />
               );
             })}
+            {showTotal && (
+              <Line
+                type="monotone"
+                dataKey="TOTAL"
+                stroke="#000000"
+                strokeWidth={2}
+                dot={false}
+                opacity={activeItem ? 0.3 : 1}
+              />
+            )}
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -231,7 +296,12 @@ function StockCharts() {
         )}
       </div>
 
-      <PortfolioManager currentPrices={currentPrices} etfList={ETF_LIST} />
+      <PortfolioManager
+        currentPrices={currentPrices}
+        etfList={ETF_LIST}
+        portfolio={portfolio}
+        setPortfolio={setPortfolio}
+      />
     </div>
   );
 }

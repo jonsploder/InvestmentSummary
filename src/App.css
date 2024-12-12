@@ -199,3 +199,24 @@ h2 {
   background: #646cff;
   color: white;
 }
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.total-line-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #666;
+  cursor: pointer;
+}
+
+.total-line-toggle input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}

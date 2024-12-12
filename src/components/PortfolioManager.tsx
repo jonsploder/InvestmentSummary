@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Portfolio } from "../types/portfolio";
 
@@ -23,41 +23,29 @@ const formatCurrency = (value: number): string => {
 interface PortfolioManagerProps {
   currentPrices: { [key: string]: number };
   etfList: string[];
+  portfolio: Portfolio;
+  setPortfolio: (portfolio: Portfolio) => void;
 }
 
 export function PortfolioManager({
   currentPrices,
   etfList,
+  portfolio,
+  setPortfolio,
 }: PortfolioManagerProps) {
-  const [portfolio, setPortfolio] = useState<Portfolio>(() => {
-    const saved = localStorage.getItem("portfolio");
-    return saved
-      ? JSON.parse(saved)
-      : {
-          holdings: [
-            ...etfList.map((symbol) => ({
-              symbol: symbol.replace(".AX", ""),
-              shares: 0,
-            })),
-            { symbol: "CASH", shares: 0 },
-          ],
-          lastUpdated: new Date().toISOString(),
-        };
-  });
-
   useEffect(() => {
     localStorage.setItem("portfolio", JSON.stringify(portfolio));
   }, [portfolio]);
 
   const handleSharesChange = (symbol: string, shares: number) => {
-    setPortfolio((prev) => ({
-      holdings: prev.holdings.map((holding) =>
+    setPortfolio({
+      holdings: portfolio.holdings.map((holding) =>
         holding.symbol === symbol
           ? { ...holding, shares: Math.max(0, shares) }
           : holding,
       ),
       lastUpdated: new Date().toISOString(),
-    }));
+    });
   };
 
   const pieData = portfolio.holdings
